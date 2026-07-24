@@ -33,11 +33,19 @@ RUN docker-php-ext-install \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY composer.json composer.lock ./
-RUN composer install --optimize-autoloader --no-dev --no-interaction
+# Copiar archivos esenciales ANTES de instalar dependencias
+COPY composer.json composer.lock artisan ./
 
+# Instalar dependencias SIN ejecutar scripts automáticos
+RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
+
+# Ahora copiar el resto del proyecto
 COPY . .
 
+# Ejecutar los scripts de Laravel manualmente (ahora artisan ya existe)
+RUN php artisan package:discover --ansi
+
+# Crear directorios y permisos
 RUN mkdir -p storage/logs \
     storage/framework/cache \
     storage/framework/sessions \
@@ -47,6 +55,7 @@ RUN mkdir -p storage/logs \
     && chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
+# Asegurar permisos de start.sh
 RUN chmod +x /var/www/html/start.sh
 
 EXPOSE 10000
