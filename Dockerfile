@@ -2,7 +2,13 @@ FROM php:8.3-cli
 
 WORKDIR /var/www/html
 
-# Instalar dependencias del sistema
+ENV PORT=10000 \
+    APP_ENV=production \
+    APP_DEBUG=false \
+    SESSION_DRIVER=cookie \
+    CACHE_STORE=file \
+    L5_SWAGGER_GENERATE_ALWAYS=false
+
 RUN apt-get update && apt-get install -y \
     unzip \
     git \
@@ -11,39 +17,38 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
+    libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP
 RUN docker-php-ext-install \
     pdo \
     pdo_mysql \
+    mysqli \
     mbstring \
     exif \
     pcntl \
     bcmath \
-    gd
+    gd \
+    zip
 
-# Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiar los archivos del proyecto
+COPY composer.json composer.lock ./
+RUN composer install --optimize-autoloader --no-dev --no-interaction
+
 COPY . .
 
-# Instalar dependencias de Laravel
-RUN composer install --optimize-autoloader --no-dev
-
-# Crear directorios necesarios y dar permisos
 RUN mkdir -p storage/logs \
-    && mkdir -p bootstrap/cache \
-    && chmod -R 775 storage \
-    && chmod -R 775 bootstrap/cache
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/api-docs \
+    bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
-# Exponer el puerto
+RUN chmod +x /var/www/html/start.sh
+
 EXPOSE 10000
 
-# Copiar script de inicio y dar permisos de ejecución
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
-# Comando para iniciar con el script
-CMD ["/start.sh"]
+CMD ["/var/www/html/start.sh"]
