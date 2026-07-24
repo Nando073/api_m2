@@ -99,8 +99,7 @@ return [
             /*
              * Ruta donde se almacenan los assets de Swagger UI
              */
-            'swagger_ui_assets_path' => env('L5_SWAGGER_UI_ASSETS_PATH', 'vendor/swagger-api/swagger-ui/dist/'),
-
+            'swagger_ui_assets_path' => env('L5_SWAGGER_UI_ASSETS_PATH', 'vendor/swagger-api/swagger-ui/'),
             /*
              * Directorios excluidos del escaneo (deprecado)
              */
